@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() { return request.auth != null && true; }
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    // Validation Helpers
+    function isValidProspect(data) {
+      return data.keys().hasAll(['companyName', 'status', 'ownerId', 'createdAt'])
+        && data.companyName is string && data.companyName.size() <= 100
+        && data.status is string
+        && data.ownerId == request.auth.uid
+        && (data.value == null || data.value is number)
+        && data.createdAt == request.time;
+    }
+    
+    function isValidClient(data) {
+      return data.keys().hasAll(['name', 'ownerId', 'createdAt'])
+        && data.name is string && data.name.size() <= 100
+        && data.ownerId == request.auth.uid
+        && (data.pan == null || (data.pan is string && data.pan.size() <= 10))
+        && (data.gstin == null || (data.gstin is string && data.gstin.size() <= 15))
+        && data.createdAt == request.time;
+    }
+    
+    function isValidMaterial(data) {
+      return data.keys().hasAll(['title', 'category', 'ownerId', 'createdAt'])
+        && data.title is string && data.title.size() <= 200
+        && data.category is string && data.category.size() <= 50
+        && data.ownerId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+    
+    function isValidApiKey(data) {
+      return data.keys().hasAll(['name', 'prefix', 'status', 'ownerId', 'createdAt'])
+        && data.name is string && data.name.size() <= 100
+        && data.prefix is string && data.prefix.size() <= 50
+        && data.status in ['Active', 'Revoked']
+        && data.ownerId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+    
+    function isValidKmsSecret(data) {
+      return data.keys().hasAll(['system', 'username', 'status', 'ownerId', 'createdAt'])
+        && data.system is string && data.system.size() <= 100
+        && data.username is string && data.username.size() <= 100
+        && data.status in ['Active', 'Archived']
+        && data.ownerId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+    
+    function isValidSupportTicket(data) {
+      return data.keys().hasAll(['subject', 'priority', 'status', 'ownerId', 'createdAt'])
+        && data.subject is string && data.subject.size() <= 200
+        && (data.description == null || (data.description is string && data.description.size() <= 4000))
+        && (data.category == null || (data.category is string && data.category.size() <= 100))
+        && (data.requesterEmail == null || (data.requesterEmail is string && data.requesterEmail.size() <= 120))
+        && (data.requesterName == null || (data.requesterName is string && data.requesterName.size() <= 100))
+        && (data.attachmentName == null || (data.attachmentName is string && data.attachmentName.size() <= 200))
+        && data.priority in ['High', 'Medium', 'Low']
+        && data.status in ['Open', 'In Progress', 'Resolved', 'Closed']
+        && data.ownerId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+    
+    function isValidTask(data) {
+      return data.keys().hasAll(['title', 'status', 'ownerId', 'createdAt'])
+        && data.title is string && data.title.size() <= 200
+        && data.status in ['Not Started', 'In Progress', 'Pending Info', 'Under Review', 'Completed', 'Pending']
+        && data.ownerId == request.auth.uid
+        && (data.assignee == null || (data.assignee is string && data.assignee.size() <= 100))
+        && (data.type == null || (data.type is string && data.type.size() <= 100))
+        && (data.client == null || (data.client is string && data.client.size() <= 100))
+        && (data.dueDate == null || (data.dueDate is string && data.dueDate.size() <= 50))
+        && (data.statutoryForm == null || (data.statutoryForm is string && data.statutoryForm.size() <= 100))
+        && (data.priority == null || data.priority in ['High', 'Medium', 'Low'])
+        && data.createdAt == request.time;
+    }
+
+    match /prospects/{prospectId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(prospectId) && isValidProspect(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /clients/{clientId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(clientId) && isValidClient(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /materials/{materialId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(materialId) && isValidMaterial(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /api_keys/{apiKeyId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(apiKeyId) && isValidApiKey(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /kms_secrets/{secretId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(secretId) && isValidKmsSecret(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /support_tickets/{ticketId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(ticketId) && isValidSupportTicket(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /tasks/{taskId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) && isValidTask(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    match /invoices/{invoiceId} {
+      allow read, write: if isSignedIn();
+    }
+    match /retainers/{retainerId} {
+      allow read, write: if isSignedIn();
+    }
+    match /audit_logs/{logId} {
+      allow read: if false; // System only read/write
+      allow write: if false;
+    }
+  }
+}

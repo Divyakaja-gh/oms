@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+.github
+scripts/migrations
+*.log
+.env
+.DS_Store

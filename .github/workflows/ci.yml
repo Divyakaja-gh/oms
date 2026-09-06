@@ -1,0 +1,35 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Typecheck & Strict Lint
+        run: npm run lint
+
+      - name: Production Bundle & Build
+        run: npm run build
+
+      - name: Verify Dist Artifacts
+        run: |
+          test -f dist/index.html || exit 1
+          test -f dist/server.cjs || exit 1
+          echo "Build artifacts verified successfully."

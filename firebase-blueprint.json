@@ -1,0 +1,198 @@
+{
+  "entities": {
+    "Prospect": {
+      "title": "Prospect",
+      "description": "A business development lead or pitching proposal.",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string", "maxLength": 100 },
+        "proposalTitle": { "type": "string", "maxLength": 150 },
+        "contactPerson": { "type": "string", "maxLength": 100 },
+        "designation": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "industry": { "type": "string", "maxLength": 100 },
+        "services": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string" },
+        "value": { "type": "number" },
+        "billingFrequency": { "type": "string" },
+        "paymentTerms": { "type": "string" },
+        "probability": { "type": "number" },
+        "targetDate": { "type": "string" },
+        "validityDate": { "type": "string" },
+        "assignedPartner": { "type": "string" },
+        "leadSource": { "type": "string" },
+        "scopeNotes": { "type": "string", "maxLength": 1000 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyName", "status", "ownerId", "createdAt"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "An onboarded corporate or statutory client.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "entityType": { "type": "string", "maxLength": 50 },
+        "industry": { "type": "string", "maxLength": 100 },
+        "pan": { "type": "string", "maxLength": 10 },
+        "gstin": { "type": "string", "maxLength": 15 },
+        "tan": { "type": "string", "maxLength": 10 },
+        "cin": { "type": "string", "maxLength": 21 },
+        "udyamNo": { "type": "string", "maxLength": 30 },
+        "contactPerson": { "type": "string", "maxLength": 100 },
+        "designation": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "address": { "type": "string", "maxLength": 255 },
+        "city": { "type": "string", "maxLength": 100 },
+        "state": { "type": "string", "maxLength": 100 },
+        "pincode": { "type": "string", "maxLength": 10 },
+        "status": { "type": "string", "maxLength": 50 },
+        "partner": { "type": "string", "maxLength": 100 },
+        "engagementType": { "type": "string", "maxLength": 100 },
+        "agreedFee": { "type": "number" },
+        "accountingSoftware": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId", "createdAt"]
+    },
+    "Material": {
+      "title": "Material",
+      "description": "A knowledge base material or document.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string" },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "ownerId", "createdAt"]
+    },
+    "ApiKey": {
+      "title": "ApiKey",
+      "description": "An API key for external integrations.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "prefix": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["Active", "Revoked"] },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "prefix", "status", "ownerId", "createdAt"]
+    },
+    "KmsSecret": {
+      "title": "KmsSecret",
+      "description": "A secure credential stored in the vault.",
+      "type": "object",
+      "properties": {
+        "system": { "type": "string", "maxLength": 100 },
+        "username": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["Active", "Archived"] },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["system", "username", "status", "ownerId", "createdAt"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "An internal IT or ops support request.",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 4000 },
+        "category": { "type": "string", "maxLength": 100 },
+        "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "status": { "type": "string", "enum": ["Open", "In Progress", "Resolved", "Closed"] },
+        "requesterName": { "type": "string", "maxLength": 100 },
+        "requesterEmail": { "type": "string", "maxLength": 120 },
+        "attachmentName": { "type": "string", "maxLength": 200 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "priority", "status", "ownerId", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A compliance or team task.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "assignee": { "type": "string", "maxLength": 100 },
+        "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "status": { "type": "string", "enum": ["Not Started", "In Progress", "Pending Info", "Under Review", "Completed", "Pending"] },
+        "type": { "type": "string", "maxLength": 100 },
+        "client": { "type": "string", "maxLength": 100 },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "statutoryForm": { "type": "string", "maxLength": 100 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "status", "ownerId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "prospects/{prospectId}": {
+      "schema": "Prospect",
+      "description": "Prospects collection for business development"
+    },
+    "clients/{clientId}": {
+      "schema": "Client",
+      "description": "Clients directory"
+    },
+    "materials/{materialId}": {
+      "schema": "Material",
+      "description": "Knowledge base files"
+    },
+    "api_keys/{apiKeyId}": {
+      "schema": "ApiKey",
+      "description": "API keys generated by users"
+    },
+    "kms_secrets/{secretId}": {
+      "schema": "KmsSecret",
+      "description": "Vault credentials"
+    },
+    "support_tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Support tickets"
+    },
+    "tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Workflow tasks"
+    },
+    "retainers/{retainerId}": {
+      "schema": {
+        "title": "Retainer",
+        "description": "Client retainers and recurring billing schedules",
+        "type": "object",
+        "properties": {
+          "clientId": { "type": "string" },
+          "clientName": { "type": "string" },
+          "service": { "type": "string" },
+          "amount": { "type": "number" },
+          "frequency": { "type": "string" },
+          "status": { "type": "string" },
+          "ownerId": { "type": "string" }
+        }
+      },
+      "description": "Client retainer arrangements"
+    },
+    "audit_logs/{logId}": {
+      "schema": {
+        "title": "AuditLog",
+        "description": "System audit logs",
+        "type": "object",
+        "properties": {
+          "action": { "type": "string" },
+          "ip": { "type": "string" },
+          "timestamp": { "type": "string" }
+        }
+      },
+      "description": "Audit logs"
+    }
+  }
+}

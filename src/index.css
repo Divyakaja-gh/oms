@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 
+ * Enterprise CA Practice Management Design System
+ * Global Pill Button Architecture:
+ * Enforces modern pill button shape (border-radius: 9999px) across all interactive buttons 
+ * in the entire application, including modals, action bars, toolbars, and primary CTAs.
+ */
+button,
+[role="button"],
+.btn-pill {
+  border-radius: 9999px !important;
+}
+
