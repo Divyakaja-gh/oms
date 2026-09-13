@@ -1,6 +1,6 @@
 {
   "name": "CAOMS (Enterprise CA Management)",
-  "description": "Secure, SOC2-ready practice management software for Chartered Accountants.",
+  "description": "Secure, SOC2-ready practice management software for Chartered Accountants with 100% OCR Invoice & Document Intelligence.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

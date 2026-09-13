@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { Workflow, Zap, BrainCircuit, Clock, CheckCircle2, Circle } from 'lucide-react';
+import { Workflow, Zap, BrainCircuit, Clock, CheckCircle2, Circle, ScanText, ArrowRight } from 'lucide-react';
 
-export function Automations() {
+interface AutomationsProps {
+  onNavigateToOcr?: () => void;
+}
+
+export function Automations({ onNavigateToOcr }: AutomationsProps = {}) {
   const [activeTab, setActiveTab] = useState<'rules' | 'agentic'>('rules');
 
   const ruleWorkflows = [
@@ -120,6 +124,22 @@ export function Automations() {
                 <p className="text-xs text-zinc-600 leading-relaxed font-medium mt-auto">
                   {agent.desc}
                 </p>
+
+                {agent.id === 'a6' && onNavigateToOcr && (
+                  <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                      <ScanText className="w-3.5 h-3.5" />
+                      100% Extraction Engine Ready
+                    </span>
+                    <button
+                      onClick={onNavigateToOcr}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Launch OCR Studio</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { ShieldAlert, Clock, RefreshCw, Lock, AlertTriangle, ShieldCheck, Volume2, VolumeX } from 'lucide-react';
 import { User, SessionTimeoutPolicy } from '../../types';
+import { useSessionRemainingSeconds } from '../../hooks/useSessionTimeout';
 
 interface SessionInactivityModalProps {
   isOpen: boolean;
-  remainingSeconds: number;
+  remainingSeconds?: number;
   policy: SessionTimeoutPolicy;
   user: User;
   onExtend: () => void;
@@ -13,9 +14,9 @@ interface SessionInactivityModalProps {
   isSimulating?: boolean;
 }
 
-export function SessionInactivityModal({
+function SessionInactivityModalComponent({
   isOpen,
-  remainingSeconds,
+  remainingSeconds: externalRemainingSeconds,
   policy,
   user,
   onExtend,
@@ -23,6 +24,8 @@ export function SessionInactivityModal({
   onToggleSound,
   isSimulating,
 }: SessionInactivityModalProps) {
+  const liveRemainingSeconds = useSessionRemainingSeconds(externalRemainingSeconds ?? 60);
+  const remainingSeconds = externalRemainingSeconds !== undefined ? liveRemainingSeconds : 60;
   // Listen for Space or Enter key to quickly extend session
   useEffect(() => {
     if (!isOpen) return;
@@ -203,3 +206,6 @@ export function SessionInactivityModal({
     </div>
   );
 }
+
+export const SessionInactivityModal = React.memo(SessionInactivityModalComponent);
+

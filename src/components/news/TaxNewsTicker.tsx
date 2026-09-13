@@ -21,7 +21,7 @@ import {
 
 export type { TaxNewsArticle };
 
-export function TaxNewsTicker() {
+function TaxNewsTickerComponent() {
   // Initialize with verified fresh statutory articles immediately so ticker is never blank
   const [articles, setArticles] = useState<TaxNewsArticle[]>(() => getFreshStatutoryFeed());
   const [isLive, setIsLive] = useState<boolean>(true);
@@ -227,17 +227,6 @@ export function TaxNewsTicker() {
             <ChevronRight className="w-2.5 h-2.5" />
           </button>
         </div>
-
-        {/* Smooth Linear Marquee Style */}
-        <style>{`
-          @keyframes tickerAnim {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-          #tax-live-news-ticker-bar:hover .animate-ticker {
-            animation-play-state: paused;
-          }
-        `}</style>
       </div>
 
       {/* Modal: Full Live Regulatory & Tax Bulletins */}
@@ -383,3 +372,5 @@ export function TaxNewsTicker() {
     </>
   );
 }
+
+export const TaxNewsTicker = React.memo(TaxNewsTickerComponent);

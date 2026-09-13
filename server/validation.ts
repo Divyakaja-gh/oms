@@ -69,6 +69,11 @@ export function antiInjectionMiddleware(req: express.Request, res: express.Respo
     if (!obj || typeof obj !== 'object') return { isMalicious: false };
 
     for (const key of Object.keys(obj)) {
+      // Exclude large raw base64 binary and full OCR transcript payloads from SQL string checks
+      if (['fileBase64', 'base64Data', 'fileData', 'imageData', 'rawBase64', 'rawTextTranscript'].includes(key)) {
+        continue;
+      }
+
       const fullPath = path ? `${path}.${key}` : key;
       const val = obj[key];
 

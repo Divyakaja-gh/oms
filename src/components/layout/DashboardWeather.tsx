@@ -14,7 +14,7 @@ interface GeoLocationData {
   timezone?: string;
 }
 
-export function DashboardWeather() {
+function DashboardWeatherComponent() {
   const [time, setTime] = useState(new Date());
   const [geo, setGeo] = useState<GeoLocationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -220,3 +220,5 @@ export function DashboardWeather() {
     </div>
   );
 }
+
+export const DashboardWeather = React.memo(DashboardWeatherComponent);

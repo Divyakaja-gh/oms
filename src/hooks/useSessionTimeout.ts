@@ -18,6 +18,26 @@ export interface UseSessionTimeoutProps {
   onLogout: (reason?: string) => void;
 }
 
+// Global lightweight pub/sub for session remaining seconds
+// Allows only targeted components (like SessionGuardIndicator) to re-render on countdown ticks
+type CountdownListener = (seconds: number) => void;
+const countdownListeners = new Set<CountdownListener>();
+let currentRemainingSeconds: number = 1440 * 60;
+
+export function useSessionRemainingSeconds(fallbackSeconds: number = 900): number {
+  const [seconds, setSeconds] = useState<number>(() => currentRemainingSeconds || fallbackSeconds);
+  useEffect(() => {
+    const listener: CountdownListener = (s: number) => {
+      setSeconds(s);
+    };
+    countdownListeners.add(listener);
+    return () => {
+      countdownListeners.delete(listener);
+    };
+  }, []);
+  return seconds;
+}
+
 export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
   // Load policy from localStorage if available, ensuring testingMode is enabled by default
   const [policy, setPolicy] = useState<SessionTimeoutPolicy>(() => {
@@ -39,21 +59,21 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
     return DEFAULT_POLICY;
   });
 
-  const [lastActivity, setLastActivity] = useState<number>(Date.now());
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(policy.timeoutMinutes * 60);
   const [isWarningOpen, setIsWarningOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
 
   const lastActivityRef = useRef<number>(Date.now());
+  const remainingSecondsRef = useRef<number>(policy.timeoutMinutes * 60);
+  const isWarningOpenRef = useRef<boolean>(false);
   const hasPlayedChimeRef = useRef<boolean>(false);
   const isLoggingOutRef = useRef<boolean>(false);
   const throttleTimeoutRef = useRef<number | null>(null);
 
-  // Keep ref in sync
-  lastActivityRef.current = lastActivity;
+  // Keep warning ref in sync
+  isWarningOpenRef.current = isWarningOpen;
 
-  // Reset timer on user activity
+  // Reset timer silently on user activity without triggering React re-renders
   const handleUserActivity = useCallback(() => {
     if (!user || isLoggingOutRef.current) return;
 
@@ -64,20 +84,21 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
         throttleTimeoutRef.current = null;
       }, 1000);
 
-      // Only auto-reset if warning modal is NOT actively open or user is interacting
-      if (!isWarningOpen) {
+      // Only auto-reset if warning modal is NOT actively open
+      if (!isWarningOpenRef.current) {
         lastActivityRef.current = now;
-        setLastActivity(now);
       }
     }
-  }, [user, isWarningOpen]);
+  }, [user]);
 
   // Extend session explicitly (e.g. from warning modal or drawer button)
   const extendSession = useCallback(async () => {
     const now = Date.now();
     lastActivityRef.current = now;
-    setLastActivity(now);
-    setIsWarningOpen(false);
+    if (isWarningOpenRef.current) {
+      setIsWarningOpen(false);
+      isWarningOpenRef.current = false;
+    }
     hasPlayedChimeRef.current = false;
     setIsSimulating(false);
 
@@ -111,7 +132,10 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
   const lockNow = useCallback(async (reason: string = 'MANUAL_LOCK') => {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
-    setIsWarningOpen(false);
+    if (isWarningOpenRef.current) {
+      setIsWarningOpen(false);
+      isWarningOpenRef.current = false;
+    }
 
     if (user) {
       try {
@@ -146,9 +170,14 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
     const targetRemainingMs = countdownSeconds * 1000;
     const artificialLastActivity = Date.now() - (policy.timeoutMinutes * 60 * 1000 - targetRemainingMs);
     lastActivityRef.current = artificialLastActivity;
-    setLastActivity(artificialLastActivity);
-    setRemainingSeconds(countdownSeconds);
-    setIsWarningOpen(true);
+    remainingSecondsRef.current = countdownSeconds;
+    currentRemainingSeconds = countdownSeconds;
+    countdownListeners.forEach(fn => fn(countdownSeconds));
+    
+    if (!isWarningOpenRef.current) {
+      setIsWarningOpen(true);
+      isWarningOpenRef.current = true;
+    }
 
     if (policy.soundAlertEnabled) {
       soundAlert.playWarningChime();
@@ -211,7 +240,7 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
       window.addEventListener(ev, onEvent, { passive: true });
     });
 
-    // Optional: Tab blur auto-lock
+    // Tab visibility handling
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         handleUserActivity();
@@ -230,7 +259,7 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
     };
   }, [user, handleUserActivity]);
 
-  // Master 1-second interval timer
+  // Master 1-second interval timer: Notifies isolated subscribers, never forces AppInner to re-render
   useEffect(() => {
     if (!user) return;
 
@@ -242,22 +271,35 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
       const remainingMs = Math.max(0, timeoutMs - elapsedMs);
       const remainingSecs = Math.ceil(remainingMs / 1000);
 
-      setRemainingSeconds(remainingSecs);
+      remainingSecondsRef.current = remainingSecs;
+      currentRemainingSeconds = remainingSecs;
+
+      // Broadcast countdown to lightweight subscribers (SessionGuardIndicator)
+      countdownListeners.forEach((fn) => fn(remainingSecs));
 
       // Check if we entered the warning window (suppressed in testing mode unless simulating)
       if (isSimulating || policy.testingMode === false) {
         if (remainingMs <= warningMs && remainingMs > 0) {
-          setIsWarningOpen(true);
+          if (!isWarningOpenRef.current) {
+            setIsWarningOpen(true);
+            isWarningOpenRef.current = true;
+          }
           if (policy.soundAlertEnabled && !hasPlayedChimeRef.current) {
             soundAlert.playWarningChime();
             hasPlayedChimeRef.current = true;
           }
         } else if (remainingMs > warningMs) {
-          setIsWarningOpen(false);
+          if (isWarningOpenRef.current) {
+            setIsWarningOpen(false);
+            isWarningOpenRef.current = false;
+          }
           hasPlayedChimeRef.current = false;
         }
       } else {
-        if (isWarningOpen) setIsWarningOpen(false);
+        if (isWarningOpenRef.current) {
+          setIsWarningOpen(false);
+          isWarningOpenRef.current = false;
+        }
       }
 
       // Check if session has expired
@@ -268,8 +310,12 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
           // Testing mode active: Keep session alive seamlessly, never lock user out
           const renewed = Date.now();
           lastActivityRef.current = renewed;
-          setLastActivity(renewed);
-          setIsWarningOpen(false);
+          remainingSecondsRef.current = policy.timeoutMinutes * 60;
+          currentRemainingSeconds = remainingSecondsRef.current;
+          if (isWarningOpenRef.current) {
+            setIsWarningOpen(false);
+            isWarningOpenRef.current = false;
+          }
         } else {
           lockNow('INACTIVITY_TIMEOUT');
         }
@@ -281,7 +327,7 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
 
   return {
     policy,
-    remainingSeconds,
+    remainingSeconds: remainingSecondsRef.current,
     isWarningOpen,
     isSettingsOpen,
     isSimulating,
@@ -293,3 +339,4 @@ export function useSessionTimeout({ user, onLogout }: UseSessionTimeoutProps) {
     updatePolicy,
   };
 }
+

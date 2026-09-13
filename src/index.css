@@ -14,3 +14,23 @@ button,
   border-radius: 9999px !important;
 }
 
+/* Tax News Marquee Ticker Animations */
+@keyframes tickerAnim {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+#tax-live-news-ticker-bar:hover .animate-ticker {
+  animation-play-state: paused;
+}
+

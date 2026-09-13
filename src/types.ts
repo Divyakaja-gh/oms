@@ -633,6 +633,116 @@ export interface CreditRates {
   general_nlq: number;
 }
 
+// ==========================================
+// OCR INVOICE EXTRACTION TYPES (ocr.dev suite)
+// ==========================================
+
+export interface ExtractedInvoiceLineItem {
+  id?: string;
+  slNo?: number | string;
+  description: string;
+  hsnSac?: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  discount?: number;
+  discountPercent?: number;
+  taxableAmount: number;
+  cgstRate?: number;
+  cgstAmount?: number;
+  sgstRate?: number;
+  sgstAmount?: number;
+  igstRate?: number;
+  igstAmount?: number;
+  totalAmount: number;
+}
+
+export interface ExtractedInvoiceTaxSummary {
+  taxableAmount: number;
+  cgstTotal: number;
+  sgstTotal: number;
+  igstTotal: number;
+  cessTotal: number;
+  roundOff: number;
+  grandTotal: number;
+  totalInWords?: string;
+  currency?: string;
+}
+
+export interface ExtractedInvoiceParty {
+  name: string;
+  tradeName?: string;
+  gstin?: string;
+  pan?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  stateCode?: string;
+  pincode?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface ExtractedInvoiceBankDetails {
+  bankName?: string;
+  accountHolder?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchName?: string;
+  upiId?: string;
+  paymentTerms?: string;
+  paymentMode?: string;
+}
+
+export interface ExtractedInvoiceMetadata {
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate?: string;
+  poNumber?: string;
+  poDate?: string;
+  invoiceType?: string;
+  placeOfSupply?: string;
+  reverseCharge?: string;
+  currency?: string;
+}
+
+export interface ExtractedInvoiceHandwrittenNotes {
+  hasHandwriting: boolean;
+  handwrittenItems: Array<{
+    location: string;
+    text: string;
+    confidence: number;
+  }>;
+  hasSignature: boolean;
+  signatureSignee?: string;
+  hasStamp: boolean;
+  stampDetails?: string;
+  remarksAndNotes?: string[];
+  termsAndConditions?: string[];
+}
+
+export interface ExtractedInvoiceResult {
+  id: string;
+  fileName: string;
+  fileType: 'pdf' | 'image' | 'scanned';
+  fileSize: number;
+  processedAt: string;
+  processingTimeMs: number;
+  confidenceScore: number;
+  documentQuality: 'High' | 'Medium' | 'Low / Scanned' | 'Handwritten';
+  detectedLanguage?: string;
+  metadata: ExtractedInvoiceMetadata;
+  vendor: ExtractedInvoiceParty;
+  customer: ExtractedInvoiceParty;
+  lineItems: ExtractedInvoiceLineItem[];
+  taxSummary: ExtractedInvoiceTaxSummary;
+  bankDetails: ExtractedInvoiceBankDetails;
+  annotations: ExtractedInvoiceHandwrittenNotes;
+  rawTextTranscript: string;
+  status: 'preview' | 'verified' | 'committed';
+}
+
+
 
 
 

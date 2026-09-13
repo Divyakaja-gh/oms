@@ -17,7 +17,9 @@ import {
   Folder,
   LogOut,
   X,
-  Zap
+  Zap,
+  Bell,
+  ScanText
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Role, User, SessionTimeoutPolicy } from '../../types';
@@ -55,6 +57,7 @@ export function Sidebar({ currentRole, activeTab, setActiveTab, onLogout, user, 
     { id: 'compliance', label: 'Compliance', icon: CalendarDays, roles: ['admin', 'partner', 'article', 'client'] },
     { id: 'documents', label: 'Documents', icon: Folder, roles: ['admin', 'partner', 'article', 'client'] },
     { id: 'accounts', label: 'Accounts & Bills', icon: FileSpreadsheet, roles: ['admin', 'partner', 'client'] },
+    { id: 'ocr', label: 'Invoice OCR Tool', icon: ScanText, roles: ['admin', 'partner', 'article', 'client'] },
     { id: 'vault', label: 'Credential Vault', icon: Key, roles: ['admin', 'partner'] },
     { id: 'audit', label: 'SOC2 Audit Logs', icon: ShieldCheck, roles: ['admin', 'partner'] },
     { id: 'reports', label: 'MIS & Reports', icon: BarChart3, roles: ['admin', 'partner'] },
@@ -193,6 +196,25 @@ export function Sidebar({ currentRole, activeTab, setActiveTab, onLogout, user, 
         {/* PWA Offline Installation Button */}
         <div className="px-3 pt-2">
           <PWAInstallButton variant="header" />
+        </div>
+
+        {/* System Notifications Action */}
+        <div className="px-3 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (onClose) onClose();
+              window.dispatchEvent(new CustomEvent('open_notifications'));
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-100/90 dark:bg-zinc-800/90 hover:bg-zinc-200/90 dark:hover:bg-zinc-700/90 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/70 transition-all text-xs font-medium cursor-pointer shadow-2xs"
+            aria-label="Open System Notifications"
+          >
+            <div className="flex items-center gap-2.5">
+              <Bell className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span>Notifications & Status</span>
+            </div>
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Open</span>
+          </button>
         </div>
 
         {/* User-Accessible Theme Toggle */}

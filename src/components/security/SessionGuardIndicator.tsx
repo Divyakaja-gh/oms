@@ -16,10 +16,11 @@ import {
   FileCheck
 } from 'lucide-react';
 import { User, SessionTimeoutPolicy } from '../../types';
+import { useSessionRemainingSeconds } from '../../hooks/useSessionTimeout';
 
 interface SessionGuardIndicatorProps {
   user: User;
-  remainingSeconds: number;
+  remainingSeconds?: number;
   policy: SessionTimeoutPolicy;
   isWarningOpen: boolean;
   onExtend: () => void;
@@ -28,9 +29,9 @@ interface SessionGuardIndicatorProps {
   onUpdatePolicy: (policy: Partial<SessionTimeoutPolicy>) => void;
 }
 
-export function SessionGuardIndicator({
+function SessionGuardIndicatorComponent({
   user,
-  remainingSeconds,
+  remainingSeconds: externalRemainingSeconds,
   policy,
   isWarningOpen,
   onExtend,
@@ -38,6 +39,8 @@ export function SessionGuardIndicator({
   onSimulate,
   onUpdatePolicy,
 }: SessionGuardIndicatorProps) {
+  const liveRemainingSeconds = useSessionRemainingSeconds(externalRemainingSeconds ?? 900);
+  const remainingSeconds = externalRemainingSeconds !== undefined ? liveRemainingSeconds : 900;
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tempTimeout, setTempTimeout] = useState<number>(policy.timeoutMinutes);
   const [tempWarning, setTempWarning] = useState<number>(policy.warningSeconds);
@@ -341,3 +344,6 @@ export function SessionGuardIndicator({
     </>
   );
 }
+
+export const SessionGuardIndicator = React.memo(SessionGuardIndicatorComponent);
+

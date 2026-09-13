@@ -36,6 +36,7 @@ const AIAgent = React.lazy(() => import('./pages/AIAgent').then(m => ({ default:
 const APIKeys = React.lazy(() => import('./pages/APIKeys').then(m => ({ default: m.APIKeys })));
 const Automations = React.lazy(() => import('./pages/Automations').then(m => ({ default: m.Automations })));
 const AuditLogs = React.lazy(() => import('./pages/AuditLogs').then(m => ({ default: m.AuditLogs })));
+const InvoiceOcrExtractor = React.lazy(() => import('./pages/InvoiceOcrExtractor').then(m => ({ default: m.InvoiceOcrExtractor })));
 import { useSessionTimeout } from './hooks/useSessionTimeout';
 import { SessionInactivityModal } from './components/security/SessionInactivityModal';
 import { TaxNewsTicker } from './components/news/TaxNewsTicker';
@@ -57,6 +58,7 @@ const TAB_LABELS: Record<string, string> = {
   statutory: 'Compliance Calendar',
   documents: 'Documents Vault',
   accounts: 'Accounts & Bills',
+  ocr: 'Invoice OCR Tool',
   vault: 'Credential Vault',
   audit: 'SOC2 Audit Logs',
   reports: 'MIS & Reports',
@@ -226,6 +228,10 @@ function AppInner() {
     );
   }
 
+  const handleNavigateToOcr = useCallback(() => handleSelectTab('ocr'), [handleSelectTab]);
+  const handleNavigateToBilling = useCallback(() => handleSelectTab('accounts'), [handleSelectTab]);
+  const handleNavigateToDocuments = useCallback(() => handleSelectTab('documents'), [handleSelectTab]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -238,9 +244,16 @@ function AppInner() {
       case 'statutory':
         return <Compliance />;
       case 'documents':
-        return <Documents />;
+        return <Documents onNavigateToOcr={handleNavigateToOcr} />;
       case 'accounts':
-        return <Billing />;
+        return <Billing onNavigateToOcr={handleNavigateToOcr} />;
+      case 'ocr':
+        return (
+          <InvoiceOcrExtractor 
+            onNavigateToBilling={handleNavigateToBilling}
+            onNavigateToDocuments={handleNavigateToDocuments}
+          />
+        );
       case 'vault':
         return <Vault user={user} />;
       case 'audit':
@@ -258,7 +271,7 @@ function AppInner() {
       case 'apikeys':
         return <APIKeys />;
       case 'automations':
-        return <Automations />;
+        return <Automations onNavigateToOcr={handleNavigateToOcr} />;
       default:
         return (
           <div className="flex items-center justify-center h-full p-8 text-center">
@@ -272,7 +285,7 @@ function AppInner() {
   };
 
   return (
-    <div className="flex h-screen bg-white dark:bg-zinc-950 font-sans overflow-hidden relative text-zinc-900 dark:text-zinc-100 transition-colors duration-150">
+    <div className="flex h-screen bg-white dark:bg-zinc-950 font-sans overflow-hidden relative text-zinc-900 dark:text-zinc-100">
       {/* Responsive Navigation Sidebar (Static on Desktop, Drawer on Mobile/Tablet) */}
       <Sidebar 
         currentRole={user.role} 
@@ -294,7 +307,7 @@ function AppInner() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 flex flex-col h-full bg-[#FAFAFA] dark:bg-zinc-950 overflow-hidden transition-colors duration-150">
+      <div className="flex-1 min-w-0 flex flex-col h-full bg-[#FAFAFA] dark:bg-zinc-950 overflow-hidden">
         {/* Offline Caching & Connectivity Banner */}
         <OfflineBanner />
         
@@ -344,7 +357,7 @@ function AppInner() {
         </div>
 
         {/* Dynamic Route View Scroll Container */}
-        <div className="flex-1 overflow-y-auto pb-16 sm:pb-0">
+        <div className="flex-1 overflow-y-auto pb-32 sm:pb-0">
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-64 p-8">
               <div className="flex flex-col items-center gap-3">

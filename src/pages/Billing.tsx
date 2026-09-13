@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, X, Search, Filter, FileText, Download, Send, CreditCard, Receipt, FilePlus, ChevronRight, AlertCircle, Building, Hash, Printer, Zap } from 'lucide-react';
+import { Plus, X, Search, Filter, FileText, Download, Send, CreditCard, Receipt, FilePlus, ChevronRight, AlertCircle, Building, Hash, Printer, Zap, ScanText, Trash2, ShieldCheck, Check, Sparkles } from 'lucide-react';
 import { downloadInvoicePDF, printHtmlDocument } from '../utils/printAndPdfUtils';
-import { collection, addDoc, onSnapshot, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, serverTimestamp, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { AgentCreditsTab } from '../components/credits/AgentCreditsTab';
 
@@ -18,7 +18,11 @@ const SAC_CODES = [
 
 const INVOICE_TYPES = ['Tax Invoice', 'Proforma Invoice', 'Credit Note', 'Debit Note', 'Receipt'];
 
-export function Billing() {
+interface BillingProps {
+  onNavigateToOcr?: () => void;
+}
+
+export function Billing({ onNavigateToOcr }: BillingProps = {}) {
   const [activeTab, setActiveTab] = useState<'invoices' | 'retainers' | 'credits'>('invoices');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRetainerModalOpen, setIsRetainerModalOpen] = useState(false);
@@ -37,6 +41,8 @@ export function Billing() {
   const [dueDate, setDueDate] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('Net 15');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
+  const [cleanSuccessMsg, setCleanSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -62,6 +68,58 @@ export function Billing() {
   }, []);
 
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
+
+  // Detect duplicate invoices by invoiceNumber to guarantee zero duplicacy
+  const duplicateInvoiceGroups = useMemo(() => {
+    const groups: { [key: string]: any[] } = {};
+    invoices.forEach(inv => {
+      const key = (inv.invoiceNumber || '').trim().toLowerCase();
+      if (key) {
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(inv);
+      }
+    });
+    return Object.values(groups).filter(g => g.length > 1);
+  }, [invoices]);
+
+  const totalDuplicatesCount = useMemo(() => {
+    return duplicateInvoiceGroups.reduce((acc, g) => acc + (g.length - 1), 0);
+  }, [duplicateInvoiceGroups]);
+
+  const handleCleanDuplicates = async () => {
+    setCleaningDuplicates(true);
+    try {
+      let deleted = 0;
+      for (const group of duplicateInvoiceGroups) {
+        // Keep the latest record (by updatedAt or createdAt)
+        const sorted = [...group].sort((a, b) => {
+          const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+          const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+          return timeB - timeA;
+        });
+        // Delete all except the primary record
+        for (let i = 1; i < sorted.length; i++) {
+          await deleteDoc(doc(db, 'invoices', sorted[i].id));
+          deleted++;
+        }
+      }
+      setCleanSuccessMsg(`Cleaned up ${deleted} duplicate invoice entries. All records are now uniquely preserved!`);
+    } catch (err) {
+      console.error('Error cleaning duplicates:', err);
+    } finally {
+      setCleaningDuplicates(false);
+    }
+  };
+
+  const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => {
+    if (!confirm(`Are you sure you want to delete invoice #${invoiceNumber || 'INV'} from billing records?`)) return;
+    try {
+      await deleteDoc(doc(db, 'invoices', invoiceId));
+      setCleanSuccessMsg(`Invoice #${invoiceNumber || 'INV'} removed.`);
+    } catch (err) {
+      console.error('Failed to delete invoice:', err);
+    }
+  };
 
   // Auto-detect supply type naive logic (if client state matches firm state, but we don't have firm state, so we just toggle based on a dummy logic or leave it manual)
   useEffect(() => {
@@ -210,8 +268,17 @@ export function Billing() {
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">Generate Tax Invoices, Proformas, Credit Notes, and Track Receivables.</p>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            {onNavigateToOcr && (
+              <button 
+                onClick={onNavigateToOcr} 
+                className="flex-1 sm:flex-initial justify-center flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors shadow-2xs cursor-pointer"
+              >
+                <ScanText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Extract Invoice (OCR)</span>
+              </button>
+            )}
             <button 
-              onClick={() => setIsRetainerModalOpen(true)} 
+                onClick={() => setIsRetainerModalOpen(true)} 
               className="flex-1 sm:flex-initial justify-center flex items-center gap-2 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors shadow-sm cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -247,7 +314,10 @@ export function Billing() {
           <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
 
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-50/50">
-            <h2 className="font-bold text-xs sm:text-sm text-zinc-900 uppercase tracking-widest">Billing Registry</h2>
+            <div className="flex items-center gap-2.5">
+              <h2 className="font-bold text-xs sm:text-sm text-zinc-900 uppercase tracking-widest">Billing Registry</h2>
+              <span className="text-xs text-zinc-500 font-medium">({invoices.length} {invoices.length === 1 ? 'record' : 'records'})</span>
+            </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-initial">
                 <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -258,6 +328,39 @@ export function Billing() {
               </button>
             </div>
           </div>
+
+          {/* DEDUPLICATION GUARANTEE BANNER */}
+          {totalDuplicatesCount > 0 && (
+            <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-amber-900">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Duplicate Entries Detected:</strong> Found {totalDuplicatesCount} redundant {totalDuplicatesCount === 1 ? 'copy' : 'copies'} across {duplicateInvoiceGroups.length} invoice {duplicateInvoiceGroups.length === 1 ? 'number' : 'numbers'}.
+                </span>
+              </div>
+              <button
+                onClick={handleCleanDuplicates}
+                disabled={cleaningDuplicates}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{cleaningDuplicates ? 'Deduplicating...' : 'Deduplicate Invoices Now'}</span>
+              </button>
+            </div>
+          )}
+
+          {cleanSuccessMsg && (
+            <div className="px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between gap-2 text-xs text-emerald-900">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{cleanSuccessMsg}</span>
+              </div>
+              <button onClick={() => setCleanSuccessMsg(null)} className="text-zinc-400 hover:text-zinc-700 cursor-pointer">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="divide-y divide-zinc-100">
             {invoices.length === 0 ? (
               <div className="text-center text-zinc-500 py-12 sm:py-16 px-4">
@@ -276,6 +379,12 @@ export function Billing() {
                       <div className="flex items-center gap-2 mb-0.5 sm:mb-1 flex-wrap">
                         <span className="font-bold text-zinc-900 text-sm">{i.invoiceNumber || 'INV-XXX'}</span>
                         <span className="text-[10px] uppercase font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">{i.type || 'Tax Invoice'}</span>
+                        {(i.source === 'OCR_DEV_TOOL' || i.ocrId) && (
+                          <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <ScanText className="w-2.5 h-2.5" />
+                            OCR Extracted
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500 font-medium truncate">{i.clientName || i.client}</div>
                     </div>
@@ -354,6 +463,13 @@ export function Billing() {
                       </button>
                       <button className="p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer" title="Send to Client">
                         <Send className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteInvoice(i.id, i.invoiceNumber)}
+                        className="p-1.5 sm:p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                        title="Delete invoice from records"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

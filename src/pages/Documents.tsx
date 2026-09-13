@@ -19,11 +19,16 @@ import {
   Sparkles, 
   Tag, 
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  ScanText
 } from 'lucide-react';
 import { ClientDocument } from '../types';
 import { db, auth } from '../lib/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
+
+interface DocumentsProps {
+  onNavigateToOcr?: () => void;
+}
 
 interface ClientOption {
   id: string;
@@ -96,7 +101,7 @@ const INITIAL_DOCUMENTS: ClientDocument[] = [
   }
 ];
 
-export function Documents() {
+export function Documents({ onNavigateToOcr }: DocumentsProps = {}) {
   const [clients, setClients] = useState<ClientOption[]>(DEFAULT_CLIENTS);
   const [selectedClientId, setSelectedClientId] = useState<string>(DEFAULT_CLIENTS[0].id);
   const [clientFolders, setClientFolders] = useState<string[]>(STANDARD_FOLDERS);
@@ -299,13 +304,25 @@ export function Documents() {
             <p className="text-xs text-zinc-500 mt-0.5 font-medium">7 folders per client · versioned · AES-256 at rest</p>
           </div>
 
-          <button
-            onClick={handleRefresh}
-            title="Refresh documents repository"
-            className="p-2 bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-900 rounded-full shadow-sm hover:bg-zinc-50 transition-all cursor-pointer"
-          >
-            <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-600' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            {onNavigateToOcr && (
+              <button
+                onClick={onNavigateToOcr}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+              >
+                <ScanText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>Invoice OCR Tool</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleRefresh}
+              title="Refresh documents repository"
+              className="p-2 bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-900 rounded-full shadow-sm hover:bg-zinc-50 transition-all cursor-pointer"
+            >
+              <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-600' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Client Selector Card */}
