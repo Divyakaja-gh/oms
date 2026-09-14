@@ -29,6 +29,8 @@ import { TeamWorkloadHeatmap } from '../components/tasks/TeamWorkloadHeatmap';
 import { TaskKanbanBoard } from '../components/tasks/TaskKanbanBoard';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { TaskDetailModal } from '../components/tasks/TaskDetailModal';
+import { AutoTaskManagerModal } from '../components/automation/AutoTaskManagerModal';
+import { TaskSentinelWidget } from '../components/automation/TaskSentinelWidget';
 
 const LOCAL_STORAGE_KEY = 'aarav_advisors_tasks_v2';
 
@@ -125,6 +127,7 @@ export function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAutoManagerOpen, setIsAutoManagerOpen] = useState(false);
   const [createInitialStatus, setCreateInitialStatus] = useState<TaskStatus>('Not Started');
   const [createInitialDeadline, setCreateInitialDeadline] = useState<any>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -135,6 +138,31 @@ export function Tasks() {
   const [selectedPriority, setSelectedPriority] = useState('All');
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDeadlineFilter, setSelectedDeadlineFilter] = useState<string | null>(null);
+
+  const handleTasksGenerated = (newGeneratedTasks: Partial<Task>[]) => {
+    const fullyTypedTasks: Task[] = newGeneratedTasks.map((t, idx) => ({
+      id: t.id || `gen_task_${Date.now()}_${idx}`,
+      title: t.title || 'Statutory Compliance Task',
+      description: t.description || '',
+      type: t.type || 'Statutory',
+      status: (t.status as TaskStatus) || 'Not Started',
+      priority: (t.priority as TaskPriority) || 'High',
+      client: t.client || 'Practice Client',
+      assignee: t.assignee || 'Unassigned',
+      dueDate: t.dueDate || new Date().toISOString().split('T')[0],
+      statutoryForm: t.statutoryForm || '',
+      subtasks: t.subtasks || [],
+      recurrence: t.recurrence || 'Monthly',
+      isOverdue: false,
+      createdAt: new Date().toISOString()
+    }));
+
+    setTasks(prev => {
+      const updated = [...fullyTypedTasks, ...prev];
+      saveLocalTasks(updated);
+      return updated;
+    });
+  };
 
   // Load from LocalStorage as fallback / baseline
   const loadLocalTasks = (): Task[] => {
@@ -452,6 +480,16 @@ export function Tasks() {
 
             <button
               type="button"
+              onClick={() => setIsAutoManagerOpen(true)}
+              className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all shadow-2xs cursor-pointer active:scale-98"
+              title="Auto-generate statutory recurrence tasks across clients"
+            >
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span>Auto Task Engine</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 setCreateInitialDeadline(null);
                 setCreateInitialStatus('Not Started');
@@ -464,6 +502,9 @@ export function Tasks() {
             </button>
           </div>
         </div>
+
+        {/* Proactive Task Sentinel: Flag Missing Compliance Tasks */}
+        <TaskSentinelWidget />
 
         {/* 3. TWO-COLUMN WORK AREA: LEFT HEATMAP & RIGHT KANBAN BOARD */}
         <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
@@ -518,6 +559,13 @@ export function Tasks() {
         onClose={() => setSelectedTask(null)}
         onUpdateTask={handleUpdateTask}
         onDeleteTask={handleDeleteTask}
+      />
+
+      {/* Auto Task Management Engine Modal */}
+      <AutoTaskManagerModal
+        isOpen={isAutoManagerOpen}
+        onClose={() => setIsAutoManagerOpen(false)}
+        onTasksGenerated={handleTasksGenerated}
       />
     </div>
   );

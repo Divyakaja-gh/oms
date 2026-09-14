@@ -742,9 +742,149 @@ export interface ExtractedInvoiceResult {
   status: 'preview' | 'verified' | 'committed';
 }
 
+// ----------------------------------------------------
+// PRACTICE MANAGEMENT AUTOMATION & FINEXO PMS EXTENSIONS
+// ----------------------------------------------------
 
+export interface AttendanceRecord {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: Role;
+  date: string; // YYYY-MM-DD
+  checkInTime: string; // HH:MM:SS
+  checkOutTime?: string;
+  workLocation: 'Office' | 'Client Site' | 'WFH';
+  clientVisited?: string;
+  status: 'Present' | 'Late' | 'Half-day' | 'On Leave';
+  totalHours?: number;
+  notes?: string;
+  ipAddress?: string;
+}
 
+export interface LiveTeamMember {
+  id: string;
+  name: string;
+  role: Role;
+  status: 'active' | 'in_meeting' | 'on_site' | 'break' | 'offline';
+  currentTask?: string;
+  clientName?: string;
+  clockInTime?: string;
+  lastActive: string;
+  location: string;
+}
 
+export interface DscRecord {
+  id: string;
+  clientId: string;
+  clientName: string;
+  holderName: string;
+  holderDesignation: string;
+  pan: string;
+  din?: string;
+  issuingAuthority: string; // e-Mudhra, Capricorn, VSign, Sify
+  certificateClass: 'Class 3' | 'Class 2';
+  validFrom: string;
+  validUntil: string;
+  daysRemaining: number;
+  status: 'active' | 'expiring_soon' | 'expired';
+  tokenLocation: 'Office Safe' | 'With Client' | 'Partner Desk' | 'In Use';
+  tokenPin?: string;
+  lastRenewalAlertSent?: string;
+}
 
+export interface TaskSentinelAlert {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientPan: string;
+  clientGstin?: string;
+  complianceCategory: 'GST' | 'ITR' | 'TDS' | 'MCA';
+  reason: string;
+  suggestedTaskTitle: string;
+  dueDate: string;
+  priority: 'High' | 'Medium';
+  severity: 'critical' | 'warning';
+}
 
+export interface DripEmailStep {
+  dayOffset: number; // e.g. -7, -3, -1, +1
+  title: string;
+  subject: string;
+  templateBody: string;
+  channel: 'email' | 'whatsapp' | 'both';
+}
 
+export interface DripEmailCampaign {
+  id: string;
+  name: string;
+  triggerEvent: 'gst_filing_due' | 'advance_tax_due' | 'audit_documents_pending' | 'dsc_expiry' | 'custom';
+  active: boolean;
+  frequency: string;
+  steps: DripEmailStep[];
+  recipientCount?: number;
+  lastTriggered?: string;
+}
+
+export interface CustomFieldDefinition {
+  id: string;
+  targetEntity: 'client' | 'task';
+  label: string;
+  fieldKey: string;
+  fieldType: 'text' | 'number' | 'date' | 'select' | 'boolean';
+  options?: string[];
+  placeholder?: string;
+  required?: boolean;
+  defaultValue?: string;
+}
+
+export interface FirmProfile {
+  id: string;
+  firmName: string;
+  firmType: 'Proprietorship' | 'Partnership' | 'LLP' | 'Private Limited';
+  registrationNo: string; // ICAI FRN
+  pan: string;
+  gstin: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  email: string;
+  bankName: string;
+  bankAccountNo: string;
+  bankIfsc: string;
+  bankBranch: string;
+  invoicePrefix: string; // e.g. "AA/25-26/"
+  isDefault: boolean;
+  logoUrl?: string;
+}
+
+export interface ClientVisit {
+  id: string;
+  clientId: string;
+  clientName: string;
+  visitorId: string;
+  visitorName: string;
+  visitorRole: string;
+  visitDate: string;
+  startTime: string;
+  endTime?: string;
+  purpose: 'Statutory Audit' | 'Scrutiny Hearing' | 'GST Assessment' | 'Stock Verification' | 'Client Review Meeting' | 'Document Collection';
+  location: string;
+  contactPerson: string;
+  minutesOfMeeting: string;
+  actionItems: string[];
+  expenseClaimed?: number;
+  status: 'Scheduled' | 'Completed' | 'Cancelled';
+}
+
+export interface PortalQuickLogin {
+  id: string;
+  portalKey: 'GST' | 'ITR' | 'TRACES' | 'MCA' | 'EPFO';
+  name: string;
+  portalUrl: string;
+  description: string;
+  suggestedCredentialsCategory: string;
+  quickActions: { label: string; url: string }[];
+}

@@ -17,6 +17,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import path from 'path';
+import http from 'http';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { runOnboardingAgent, runNoticeTriageAgent, runGstBankReconAgent } from './server/agents';
@@ -1298,7 +1299,7 @@ app.post('/api/access-registry/add', requireAuth, (req, res) => {
 
 // Audit Logs GET Endpoint
 app.get('/api/audit-logs', requireAuth, (req, res) => {
-  const { category, severity, action, search } = req.query;
+  const { category, severity, action, search, limit } = req.query;
   
   let filtered = [...auditLogsStore];
 
@@ -1327,8 +1328,16 @@ app.get('/api/audit-logs', requireAuth, (req, res) => {
     );
   }
 
+  const totalMatches = filtered.length;
+  if (limit) {
+    const limitNum = parseInt(limit as string, 10);
+    if (!isNaN(limitNum) && limitNum > 0) {
+      filtered = filtered.slice(0, limitNum);
+    }
+  }
+
   res.json({
-    total: filtered.length,
+    total: totalMatches,
     unfilteredTotal: auditLogsStore.length,
     soc2ComplianceScore: '100% Verified',
     immutableChainStatus: 'Healthy (SHA-256 HMAC Verified)',
@@ -1944,6 +1953,8 @@ app.get('/api/email/status', requireAuth, (req, res) => {
 });
 
 async function startServer() {
+  const server = http.createServer(app);
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true, hmr: false },
@@ -1964,7 +1975,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Enterprise CAOMS Server running on http://localhost:${PORT}`);
   });
 }

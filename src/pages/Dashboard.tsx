@@ -3,8 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { User } from '../types';
-import { ShieldAlert, Users, CalendarDays, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { ShieldAlert, Users, CalendarDays, ArrowUpRight, TrendingUp, UserCheck, Key, MapPin, Globe, Sparkles } from 'lucide-react';
 import { ActiveAccessRegistry } from '../components/security/ActiveAccessRegistry';
+import { RecentActivityWidget } from '../components/dashboard/RecentActivityWidget';
+import { TaskSentinelWidget } from '../components/automation/TaskSentinelWidget';
+import { PortalLoginAssistantModal } from '../components/vault/PortalLoginAssistantModal';
 
 interface Props {
   user: User;
@@ -12,7 +15,8 @@ interface Props {
 }
 
 export function Dashboard({ user, setActiveTab }: Props) {
-const [isWiping, setIsWiping] = useState(false);
+  const [isWiping, setIsWiping] = useState(false);
+  const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
   const [metrics, setMetrics] = useState({ clients: 0, tasks: 0, receivables: 0, pipeline: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -183,25 +187,90 @@ const [isWiping, setIsWiping] = useState(false);
         ))}
       </div>
 
-      {/* Practice Activity History */}
-      <div className="bg-white rounded-2xl border border-zinc-200 p-4 sm:p-6 shadow-sm">
-        <h3 className="text-xs sm:text-sm font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2 mb-6">
-          📈 PRACTICE ACTIVITY HISTORY
-        </h3>
-        <div className="space-y-6 relative before:absolute before:inset-0 before:ml-1.5 before:-translate-x-px before:h-full before:w-0.5 before:bg-zinc-100">
-          {[
-            { msg: 'New client registration: Apex Traders LLP added successfully', time: '2 days ago', color: 'bg-indigo-500' },
-            { msg: 'Rajesh Goenka uploaded Balance_sheet_Draft_FY25-26.xlsx', time: 'Yesterday', color: 'bg-indigo-500' },
-            { msg: 'Goenka Foods Private Limited completed payment of INV-2026-015', time: 'Yesterday', color: 'bg-indigo-500' },
-          ].map((log, i) => (
-            <div key={i} className="relative pl-6">
-              <div className={`absolute left-0 w-3 h-3 rounded-full ${log.color} border-2 border-white top-1`}></div>
-              <p className="text-xs font-semibold text-zinc-700">{log.msg}</p>
-              <p className="text-[10px] text-zinc-400 mt-1 font-medium uppercase tracking-wider">{log.time}</p>
+      {/* Finexo PMS Self-Operating Practice Controls Bar */}
+      <div className="bg-white rounded-2xl border border-zinc-200 p-4 sm:p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4" />
             </div>
-          ))}
+            <div>
+              <h3 className="text-sm font-bold text-zinc-900">Self-Operating CA Practice Automation Hub</h3>
+              <p className="text-xs text-zinc-500">Live team operations, automated statutory logins, and proactive compliance alerts</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsPortalModalOpen(true)}
+            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 shadow-xs self-start sm:self-auto cursor-pointer"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>1-Click Portal Login (GST / ITR / TRACES)</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button
+            onClick={() => setActiveTab('team')}
+            className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 hover:border-indigo-300 text-left transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-zinc-900 block">Live Team &amp; Attendance</span>
+                <span className="text-[11px] text-zinc-500">Check-in, biometric logs &amp; active desks</span>
+              </div>
+            </div>
+            <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-indigo-600 transition-colors" />
+          </button>
+
+          <button
+            onClick={() => setActiveTab('dsc')}
+            className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 hover:border-amber-300 text-left transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                <Key className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-zinc-900 block">DSC Expiry Radar</span>
+                <span className="text-[11px] text-zinc-500">Token tracking &amp; renewal alerts</span>
+              </div>
+            </div>
+            <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-amber-600 transition-colors" />
+          </button>
+
+          <button
+            onClick={() => setActiveTab('visits')}
+            className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 hover:border-teal-300 text-left transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                <MapPin className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-zinc-900 block">Client Visits &amp; Hearings</span>
+                <span className="text-[11px] text-zinc-500">Statutory audits, ITO visits &amp; MoMs</span>
+              </div>
+            </div>
+            <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-teal-600 transition-colors" />
+          </button>
         </div>
       </div>
+
+      {/* Task Sentinel: Task-Not-Created Real-time Alerts */}
+      <TaskSentinelWidget />
+
+      {/* Live Recent Activity Stream from AuditLogs module */}
+      <RecentActivityWidget setActiveTab={setActiveTab} />
+
+      {/* 1-Click Government Portal Login Assistant Modal */}
+      <PortalLoginAssistantModal
+        isOpen={isPortalModalOpen}
+        onClose={() => setIsPortalModalOpen(false)}
+      />
     </div>
   );
 }

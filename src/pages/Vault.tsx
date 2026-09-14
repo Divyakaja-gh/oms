@@ -18,19 +18,22 @@ import {
   Plus,
   Shield,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  Globe
 } from 'lucide-react';
 import { VaultCredentialItem, VaultStatusResponse, User, VaultCredentialCategory } from '../types';
 import { VaultStatusBanner } from '../components/vault/VaultStatusBanner';
 import { AddSecretModal } from '../components/vault/AddSecretModal';
 import { RevealSecretModal } from '../components/vault/RevealSecretModal';
 import { RotateSecretModal } from '../components/vault/RotateSecretModal';
+import { PortalLoginAssistantModal } from '../components/vault/PortalLoginAssistantModal';
 
 export function Vault({ user }: { user?: User | null }) {
   const [credentials, setCredentials] = useState<VaultCredentialItem[]>([]);
   const [vaultStatus, setVaultStatus] = useState<VaultStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
+  const [isPortalAssistantOpen, setIsPortalAssistantOpen] = useState(false);
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -174,8 +177,16 @@ export function Vault({ user }: { user?: User | null }) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setIsPortalAssistantOpen(true)}
+              className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2.5 rounded-full text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+            >
+              <Globe className="w-4 h-4 text-emerald-600" />
+              <span>1-Click Portal Login Assistant</span>
+            </button>
+
+            <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full text-xs font-bold transition-colors shadow-sm"
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full text-xs font-bold transition-colors shadow-sm cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Add Secret to Vault
@@ -548,6 +559,12 @@ export function Vault({ user }: { user?: User | null }) {
           }}
         />
       )}
+
+      {/* 1-Click Government Portal Quick Login Assistant Modal */}
+      <PortalLoginAssistantModal
+        isOpen={isPortalAssistantOpen}
+        onClose={() => setIsPortalAssistantOpen(false)}
+      />
     </div>
   );
 }

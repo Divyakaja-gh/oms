@@ -33,6 +33,7 @@ import {
   Timer
 } from 'lucide-react';
 import { AuditLogEntry, AuditCategory, AuditSeverity } from '../types';
+import { SeverityBadge } from '../components/security/SeverityBadge';
 
 export function AuditLogs() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -288,19 +289,7 @@ export function AuditLogs() {
 
   // Helper badge stylers
   const getSeverityBadge = (severity: AuditSeverity) => {
-    switch (severity) {
-      case 'CRITICAL':
-        return <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> CRITICAL</span>;
-      case 'HIGH':
-        return <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-800 border border-amber-200">HIGH</span>;
-      case 'MEDIUM':
-        return <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-yellow-100 text-yellow-800 border border-yellow-200">MEDIUM</span>;
-      case 'LOW':
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-blue-100 text-blue-800 border border-blue-200">LOW</span>;
-      case 'INFO':
-      default:
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-zinc-100 text-zinc-700 border border-zinc-200">INFO</span>;
-    }
+    return <SeverityBadge severity={severity} size="md" />;
   };
 
   const getCategoryBadge = (category: AuditCategory) => {
@@ -343,7 +332,7 @@ export function AuditLogs() {
                 className="bg-rose-950/95 text-white border-2 border-rose-500/80 rounded-2xl p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-4 duration-200 flex flex-col gap-2.5"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="relative flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
@@ -351,6 +340,7 @@ export function AuditLogs() {
                     <span className="text-[11px] font-black uppercase tracking-wider text-rose-300 bg-rose-900/80 px-2 py-0.5 rounded border border-rose-700/50 flex items-center gap-1">
                       <Flame className="w-3 h-3 text-rose-400" /> LIVE THREAT DETECTED
                     </span>
+                    <SeverityBadge severity={alert.severity} size="xs" showPulse={false} />
                   </div>
 
                   <button
@@ -666,11 +656,11 @@ export function AuditLogs() {
               className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-700 font-medium focus:outline-none focus:ring-1 focus:ring-zinc-900"
             >
               <option value="ALL">All Severities</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
-              <option value="INFO">Info</option>
+              <option value="CRITICAL">Critical (Immediate Review)</option>
+              <option value="HIGH">Warning · High Risk</option>
+              <option value="MEDIUM">Warning · Medium Risk</option>
+              <option value="LOW">Low Risk</option>
+              <option value="INFO">Informational (Info)</option>
             </select>
           </div>
         </div>
@@ -723,6 +713,8 @@ export function AuditLogs() {
                           ? 'bg-rose-50/90 font-medium' 
                           : log.severity === 'CRITICAL' || log.status === 'FLAGGED'
                           ? 'bg-rose-50/30 hover:bg-rose-50/60'
+                          : log.severity === 'HIGH'
+                          ? 'bg-amber-50/25 hover:bg-amber-50/50'
                           : 'hover:bg-zinc-50/80'
                       }`}
                     >
@@ -857,16 +849,17 @@ export function AuditLogs() {
       {selectedLog && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-zinc-200 w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
-              <div className="flex items-center gap-2">
+            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 flex-wrap gap-2">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <Terminal className="w-4 h-4 text-zinc-700" />
                 <h3 className="text-sm font-bold text-zinc-900">
                   Forensic Evidence & SOC2 Payload: {selectedLog.id}
                 </h3>
+                <SeverityBadge severity={selectedLog.severity} size="sm" />
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-zinc-400 hover:text-zinc-700 text-sm font-bold p-1"
+                className="text-zinc-400 hover:text-zinc-700 text-sm font-bold p-1 cursor-pointer"
               >
                 ✕
               </button>
@@ -880,6 +873,12 @@ export function AuditLogs() {
                   <span className="font-semibold text-zinc-900 font-mono">{selectedLog.timestamp}</span>
                 </div>
                 <div>
+                  <span className="text-zinc-500 block">Security Severity:</span>
+                  <div className="mt-1">
+                    <SeverityBadge severity={selectedLog.severity} size="sm" format="category" />
+                  </div>
+                </div>
+                <div>
                   <span className="text-zinc-500 block">SOC 2 Trust Criterion:</span>
                   <span className="font-semibold text-indigo-700">{selectedLog.soc2Criterion}</span>
                 </div>
@@ -887,7 +886,7 @@ export function AuditLogs() {
                   <span className="text-zinc-500 block">Initiating Actor:</span>
                   <span className="font-semibold text-zinc-900">{selectedLog.actor.name} ({selectedLog.actor.email})</span>
                 </div>
-                <div>
+                <div className="sm:col-span-2">
                   <span className="text-zinc-500 block">Source IP & Role:</span>
                   <span className="font-semibold text-zinc-900 font-mono">{selectedLog.actor.ipAddress} [{selectedLog.actor.role.toUpperCase()}]</span>
                 </div>

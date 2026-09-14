@@ -4,6 +4,9 @@ import { downloadInvoicePDF, printHtmlDocument } from '../utils/printAndPdfUtils
 import { collection, addDoc, onSnapshot, serverTimestamp, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { AgentCreditsTab } from '../components/credits/AgentCreditsTab';
+import { MultiFirmManagerModal } from '../components/billing/MultiFirmManagerModal';
+import { FirmProfile } from '../types';
+import { INITIAL_FIRMS } from '../data/practiceAutomationData';
 
 const SAC_CODES = [
 
@@ -43,6 +46,28 @@ export function Billing({ onNavigateToOcr }: BillingProps = {}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
   const [cleanSuccessMsg, setCleanSuccessMsg] = useState<string | null>(null);
+
+  // Multi-Firm Billing Entity State
+  const [firms, setFirms] = useState<FirmProfile[]>(() => {
+    const saved = localStorage.getItem('caoms_multi_firms');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_FIRMS;
+  });
+
+  const [activeFirmId, setActiveFirmId] = useState<string>(() => {
+    return localStorage.getItem('caoms_active_firm_id') || 'firm-1';
+  });
+
+  const [isMultiFirmModalOpen, setIsMultiFirmModalOpen] = useState(false);
+
+  const activeFirm = useMemo(() => {
+    return firms.find(f => f.id === activeFirmId) || firms[0] || INITIAL_FIRMS[0];
+  }, [firms, activeFirmId]);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -308,6 +333,56 @@ export function Billing({ onNavigateToOcr }: BillingProps = {}) {
       </div>
 
       <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-[1200px] mx-auto w-full space-y-4 sm:space-y-6">
+        {/* Multi-Firm Billing Entity Switcher Header */}
+        <div className="bg-white rounded-2xl border border-zinc-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+              {activeFirm.firmType === 'Proprietorship' ? 'SP' : activeFirm.firmType === 'LLP' ? 'LLP' : 'CA'}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-zinc-900">{activeFirm.firmName}</span>
+                <span className="text-[10px] font-mono px-2 py-0.2 bg-zinc-100 text-zinc-600 rounded">
+                  {activeFirm.invoicePrefix}
+                </span>
+                {activeFirm.isDefault && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-50 text-emerald-700 rounded">
+                    Primary
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                GSTIN: <strong className="font-mono text-zinc-700">{activeFirm.gstin || 'N/A'}</strong> | PAN: <strong className="font-mono text-zinc-700">{activeFirm.pan}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <select
+              value={activeFirmId}
+              onChange={(e) => {
+                setActiveFirmId(e.target.value);
+                localStorage.setItem('caoms_active_firm_id', e.target.value);
+              }}
+              className="px-3 py-1.5 text-xs rounded-xl border border-zinc-200 bg-white font-medium text-zinc-800"
+            >
+              {firms.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.firmName} ({f.invoicePrefix})
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={() => setIsMultiFirmModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors cursor-pointer"
+            >
+              Manage Firms
+            </button>
+          </div>
+        </div>
+
         {activeTab === 'credits' ? (
           <AgentCreditsTab />
         ) : activeTab === 'invoices' ? (
@@ -755,6 +830,18 @@ export function Billing({ onNavigateToOcr }: BillingProps = {}) {
           </div>
         </div>
       )}
+
+      {/* Multi-Firm Management Modal */}
+      <MultiFirmManagerModal
+        isOpen={isMultiFirmModalOpen}
+        onClose={() => setIsMultiFirmModalOpen(false)}
+        selectedFirmId={activeFirmId}
+        onFirmsUpdated={(updatedFirms) => setFirms(updatedFirms)}
+        onSelectFirm={(firmId: string) => {
+          setActiveFirmId(firmId);
+          localStorage.setItem('caoms_active_firm_id', firmId);
+        }}
+      />
     </div>
   );
 }

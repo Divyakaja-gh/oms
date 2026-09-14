@@ -19,7 +19,10 @@ import {
   X,
   Zap,
   Bell,
-  ScanText
+  ScanText,
+  UserCheck,
+  ShieldAlert,
+  MapPin
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Role, User, SessionTimeoutPolicy } from '../../types';
@@ -52,9 +55,12 @@ export function Sidebar({ currentRole, activeTab, setActiveTab, onLogout, user, 
   const { account, openTopUpModal } = useCredits();
   const allNavItems = [
     { id: 'dashboard', label: 'Office Dashboard', icon: LayoutDashboard, roles: ['admin', 'partner', 'article', 'client'] },
+    { id: 'team', label: 'Live Team & Attendance', icon: UserCheck, roles: ['admin', 'partner', 'article'] },
     { id: 'clients', label: 'Client Database', icon: Users, roles: ['admin', 'partner', 'article'] },
     { id: 'tasks', label: 'Tasks & Filings', icon: CheckSquare, roles: ['admin', 'partner', 'article'] },
     { id: 'compliance', label: 'Compliance', icon: CalendarDays, roles: ['admin', 'partner', 'article', 'client'] },
+    { id: 'dsc', label: 'DSC Expiry Hub', icon: ShieldAlert, roles: ['admin', 'partner'] },
+    { id: 'visits', label: 'Client Visits & Meetings', icon: MapPin, roles: ['admin', 'partner', 'article'] },
     { id: 'documents', label: 'Documents', icon: Folder, roles: ['admin', 'partner', 'article', 'client'] },
     { id: 'accounts', label: 'Accounts & Bills', icon: FileSpreadsheet, roles: ['admin', 'partner', 'client'] },
     { id: 'ocr', label: 'Invoice OCR Tool', icon: ScanText, roles: ['admin', 'partner', 'article', 'client'] },
@@ -62,8 +68,7 @@ export function Sidebar({ currentRole, activeTab, setActiveTab, onLogout, user, 
     { id: 'audit', label: 'SOC2 Audit Logs', icon: ShieldCheck, roles: ['admin', 'partner'] },
     { id: 'reports', label: 'MIS & Reports', icon: BarChart3, roles: ['admin', 'partner'] },
     { id: 'pitching', label: 'Pitching Funnel', icon: TrendingUp, roles: ['admin', 'partner'] },
-    // Temporarily disabled in navigation; functionality preserved in src/pages/Automations.tsx
-    { id: 'automations', label: 'Automations & Engine', icon: Workflow, roles: ['admin', 'partner'], disabled: true },
+    { id: 'automations', label: 'Automations & Drips', icon: Workflow, roles: ['admin', 'partner'] },
     { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen, roles: ['admin', 'partner', 'article', 'client'] },
     { id: 'support', label: 'Support & Tickets', icon: LifeBuoy, roles: ['admin', 'partner', 'article', 'client'] },
     { id: 'agent', label: 'Autonomous Agents', icon: Bot, roles: ['admin', 'partner', 'article'] },

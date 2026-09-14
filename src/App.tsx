@@ -37,6 +37,9 @@ const APIKeys = React.lazy(() => import('./pages/APIKeys').then(m => ({ default:
 const Automations = React.lazy(() => import('./pages/Automations').then(m => ({ default: m.Automations })));
 const AuditLogs = React.lazy(() => import('./pages/AuditLogs').then(m => ({ default: m.AuditLogs })));
 const InvoiceOcrExtractor = React.lazy(() => import('./pages/InvoiceOcrExtractor').then(m => ({ default: m.InvoiceOcrExtractor })));
+const LiveTeamAndAttendance = React.lazy(() => import('./components/team/LiveTeamAndAttendance').then(m => ({ default: m.LiveTeamAndAttendance })));
+const DscManagementHub = React.lazy(() => import('./components/compliance/DscManagementHub').then(m => ({ default: m.DscManagementHub })));
+const ClientVisitTracker = React.lazy(() => import('./components/visits/ClientVisitTracker').then(m => ({ default: m.ClientVisitTracker })));
 import { useSessionTimeout } from './hooks/useSessionTimeout';
 import { SessionInactivityModal } from './components/security/SessionInactivityModal';
 import { TaxNewsTicker } from './components/news/TaxNewsTicker';
@@ -67,7 +70,10 @@ const TAB_LABELS: Record<string, string> = {
   support: 'Support & Tickets',
   agent: 'Autonomous Agents',
   apikeys: 'API & Webhooks',
-  automations: 'Automations & Engine'
+  automations: 'Automations & Drips',
+  team: 'Live Team & Attendance',
+  dsc: 'DSC Expiry Hub',
+  visits: 'Client Visits & Meetings'
 };
 
 function AppInner() {
@@ -272,6 +278,12 @@ function AppInner() {
         return <APIKeys />;
       case 'automations':
         return <Automations onNavigateToOcr={handleNavigateToOcr} />;
+      case 'team':
+        return <LiveTeamAndAttendance user={user} />;
+      case 'dsc':
+        return <DscManagementHub />;
+      case 'visits':
+        return <ClientVisitTracker />;
       default:
         return (
           <div className="flex items-center justify-center h-full p-8 text-center">

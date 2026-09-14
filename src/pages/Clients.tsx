@@ -22,12 +22,14 @@ import {
   Trash2,
   FileSpreadsheet,
   Download,
-  Building
+  Building,
+  Sliders
 } from 'lucide-react';
 import { collection, addDoc, onSnapshot, serverTimestamp, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Client } from '../types';
 import { OnboardingEmailModal } from '../components/onboarding/OnboardingEmailModal';
+import { CustomFieldConfigModal } from '../components/settings/CustomFieldConfigModal';
 import { 
   INDIAN_STATES_WITH_GST_CODES, 
   ENTITY_TYPES, 
@@ -53,6 +55,7 @@ import {
 
 export function Clients() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCustomFieldsModalOpen, setIsCustomFieldsModalOpen] = useState(false);
   const [selectedClientForView, setSelectedClientForView] = useState<Client | null>(null);
   const [clientForEmail, setClientForEmail] = useState<Client | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -377,6 +380,16 @@ export function Clients() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsCustomFieldsModalOpen(true)}
+              className="w-full sm:w-auto justify-center flex items-center gap-2 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border border-zinc-200 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all shadow-2xs cursor-pointer"
+              title="Configure practice custom fields for clients"
+            >
+              <Sliders className="w-4 h-4 text-indigo-600" />
+              <span>Custom Fields</span>
+            </button>
+
             <button 
               onClick={() => {
                 resetForm();
@@ -1607,6 +1620,12 @@ export function Clients() {
           }}
         />
       )}
+
+      {/* Custom Field Configuration Modal */}
+      <CustomFieldConfigModal
+        isOpen={isCustomFieldsModalOpen}
+        onClose={() => setIsCustomFieldsModalOpen(false)}
+      />
     </div>
   );
 }
