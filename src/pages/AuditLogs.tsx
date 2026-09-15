@@ -33,11 +33,12 @@ import {
   Timer
 } from 'lucide-react';
 import { AuditLogEntry, AuditCategory, AuditSeverity } from '../types';
+import { DEFAULT_AUDIT_LOGS } from '../data/defaultAuditLogs';
 import { SeverityBadge } from '../components/security/SeverityBadge';
 
 export function AuditLogs() {
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<AuditLogEntry[]>(() => DEFAULT_AUDIT_LOGS);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('ALL');
@@ -46,7 +47,7 @@ export function AuditLogs() {
   
   // Real-time Live Notification & Sentinel State
   const [isLiveActive, setIsLiveActive] = useState(true);
-  const [lastEventCount, setLastEventCount] = useState<number>(0);
+  const [lastEventCount, setLastEventCount] = useState<number>(() => DEFAULT_AUDIT_LOGS.length);
   const [activeAlerts, setActiveAlerts] = useState<AuditLogEntry[]>([]);
   const [quarantinedIps, setQuarantinedIps] = useState<string[]>(['185.220.101.5']);
   const [isQuarantining, setIsQuarantining] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export function AuditLogs() {
     timeMs: number;
   } | null>(null);
 
-  const prevLogsRef = useRef<AuditLogEntry[]>([]);
+  const prevLogsRef = useRef<AuditLogEntry[]>(DEFAULT_AUDIT_LOGS);
 
   // Fetch Audit Logs from backend
   const fetchAuditLogs = async (isBackgroundPoll = false) => {
@@ -76,12 +77,14 @@ export function AuditLogs() {
 
       const res = await fetch(`/api/audit-logs?${params.toString()}`, {
         headers: {
-          'Authorization': 'Bearer mocked-soc2-jwt-token'
+          'Authorization': 'Bearer mocked-soc2-jwt-token',
+          'Accept': 'application/json'
         }
       });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
-        const incomingLogs: AuditLogEntry[] = data.logs || [];
+        const incomingLogs: AuditLogEntry[] = Array.isArray(data?.logs) ? data.logs : [];
         
         // Detect newly arrived critical/flagged logs
         if (prevLogsRef.current.length > 0 && incomingLogs.length > prevLogsRef.current.length) {
@@ -104,8 +107,10 @@ export function AuditLogs() {
         prevLogsRef.current = incomingLogs;
         setLogs(incomingLogs);
       }
-    } catch (err) {
-      console.error('Error fetching audit logs:', err);
+    } catch (err: any) {
+      console.warn('[AuditLogs] Notice syncing audit records:', err?.message || err);
+      // Keep existing or default logs
+      setLogs(prev => prev.length > 0 ? prev : DEFAULT_AUDIT_LOGS);
     } finally {
       if (!isBackgroundPoll) setLoading(false);
     }
@@ -115,9 +120,13 @@ export function AuditLogs() {
   const fetchIncidentSummary = async () => {
     try {
       const res = await fetch('/api/audit-logs/security-incidents', {
-        headers: { 'Authorization': 'Bearer mocked-soc2-jwt-token' }
+        headers: { 
+          'Authorization': 'Bearer mocked-soc2-jwt-token',
+          'Accept': 'application/json'
+        }
       });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         setQuarantinedIps(data.quarantinedIps || []);
         
@@ -129,8 +138,8 @@ export function AuditLogs() {
           }
         }
       }
-    } catch (err) {
-      console.error('Error fetching incidents:', err);
+    } catch (err: any) {
+      console.warn('[AuditLogs] Incident summary sync notice:', err?.message || err);
     }
   };
 

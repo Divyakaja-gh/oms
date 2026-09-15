@@ -18,44 +18,14 @@ import {
   Info 
 } from 'lucide-react';
 import { SystemAccessUser, User } from '../../types';
+import { DEFAULT_SYSTEM_ACCESS_USERS, getRoleDefaultPermissions } from '../../data/userPermissionsData';
 
 interface Props {
   currentUser: User;
   onRegistryUpdated?: () => void;
 }
 
-const DEFAULT_USERS: SystemAccessUser[] = [
-  {
-    id: 'usr_admin_01',
-    name: 'Aarav Advisors',
-    email: 'info@aaravadvisors.in',
-    role: 'ADMIN',
-    mobile: '+91 98765 43210',
-    status: 'ACTIVE',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    lastActive: '2026-09-03T10:30:00.000Z'
-  },
-  {
-    id: 'usr_part_02',
-    name: 'Hari Krishna',
-    email: 'harikrishna.p888@gmail.com',
-    role: 'PARTNER',
-    mobile: '8897728402',
-    status: 'ACTIVE',
-    createdAt: '2026-01-15T00:00:00.000Z',
-    lastActive: '2026-09-03T09:15:00.000Z'
-  },
-  {
-    id: 'usr_art_882',
-    name: 'T. Varsha',
-    email: 'acc.aaravadvisors@gmail.com',
-    role: 'ARTICLE',
-    mobile: '9585997022',
-    status: 'ACTIVE',
-    createdAt: '2026-02-01T00:00:00.000Z',
-    lastActive: '2026-09-02T16:45:00.000Z'
-  }
-];
+const DEFAULT_USERS: SystemAccessUser[] = DEFAULT_SYSTEM_ACCESS_USERS;
 
 export function ActiveAccessRegistry({ currentUser, onRegistryUpdated }: Props) {
   const [users, setUsers] = useState<SystemAccessUser[]>(() => {
@@ -293,6 +263,7 @@ export function ActiveAccessRegistry({ currentUser, onRegistryUpdated }: Props) 
         role: newUser.role,
         mobile: newUser.mobile.trim() || 'Not specified',
         status: 'ACTIVE',
+        permissions: getRoleDefaultPermissions(newUser.role),
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       };

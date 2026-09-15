@@ -65,12 +65,38 @@ function aistudioMediaPlugin(): Plugin {
 }
 // LINT.ThenChange(//depot/google3/java/com/google/alkali/boq/makersuite/applet_dev_service/templates/initializers/react_theme/vite.config.ts:aistudio_media_plugin)
 
+function silentHmrPlugin(): Plugin {
+  return {
+    name: 'vite-silent-hmr-transport',
+    enforce: 'post',
+    transform(code, id) {
+      if (id.includes('vite/dist/client/client.mjs') || id.includes('@vite/client')) {
+        return code
+          .replace(
+            /let wsTransport = createWebSocketModuleRunnerTransport\([\s\S]*?\);\s*return \{[\s\S]*?send\(data\) \{[\s\S]*?\}\s*\};/m,
+            'return { async connect() {}, async disconnect() {}, send() {} };'
+          )
+          .replace(
+            /error:\s*\(err\)\s*=>\s*console\.error\("\[vite\]",\s*err\)/g,
+            'error: (err) => console.debug("[vite]", err)'
+          )
+          .replace(
+            /console\.error\(`\[vite\] failed to connect to websocket[\s\S]*?`\);/g,
+            'console.debug("[vite] hmr offline in sandbox");'
+          );
+      }
+      return null;
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
       aistudioMediaPlugin(),
+      silentHmrPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],

@@ -40,6 +40,7 @@ const InvoiceOcrExtractor = React.lazy(() => import('./pages/InvoiceOcrExtractor
 const LiveTeamAndAttendance = React.lazy(() => import('./components/team/LiveTeamAndAttendance').then(m => ({ default: m.LiveTeamAndAttendance })));
 const DscManagementHub = React.lazy(() => import('./components/compliance/DscManagementHub').then(m => ({ default: m.DscManagementHub })));
 const ClientVisitTracker = React.lazy(() => import('./components/visits/ClientVisitTracker').then(m => ({ default: m.ClientVisitTracker })));
+const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m => ({ default: m.UserManagement })));
 import { useSessionTimeout } from './hooks/useSessionTimeout';
 import { SessionInactivityModal } from './components/security/SessionInactivityModal';
 import { TaxNewsTicker } from './components/news/TaxNewsTicker';
@@ -55,6 +56,7 @@ import { ThemeToggle } from './components/layout/ThemeToggle';
 
 const TAB_LABELS: Record<string, string> = {
   dashboard: 'Office Dashboard',
+  users: 'User Management',
   clients: 'Client Database',
   tasks: 'Tasks & Filings',
   compliance: 'Compliance Calendar',
@@ -242,6 +244,19 @@ function AppInner() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard user={user} setActiveTab={handleSelectTab} />;
+      case 'users':
+        return (
+          <UserManagement 
+            currentUser={user} 
+            onSimulateLogin={(simUser) => {
+              setUser(simUser);
+              try {
+                localStorage.setItem('caoms_session_user', JSON.stringify(simUser));
+              } catch (e) {}
+              setActiveTab('dashboard');
+            }} 
+          />
+        );
       case 'clients':
         return <Clients />;
       case 'tasks':

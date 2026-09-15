@@ -21,6 +21,7 @@ import {
   signInAnonymously 
 } from 'firebase/auth';
 import { ThemeToggle } from '../components/layout/ThemeToggle';
+import { getRoleDefaultPermissions } from '../data/userPermissionsData';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -214,8 +215,41 @@ export function Login({ onLogin, timeoutNotification, onDismissTimeoutNotificati
           email: cleanEmail,
           role: targetRole,
           tenantId: 'firm_abc',
-          firmName: 'Aarav Advisors'
+          firmName: 'Aarav Advisors',
+          permissions: getRoleDefaultPermissions(targetRole)
         };
+      }
+
+      // Check access registry for user-specific custom permissions override
+      try {
+        const savedRegistry = localStorage.getItem('caoms_access_registry');
+        if (savedRegistry) {
+          const regUsers = JSON.parse(savedRegistry);
+          if (Array.isArray(regUsers)) {
+            const matched = regUsers.find((u: any) => 
+              u.email?.toLowerCase().trim() === cleanEmail.toLowerCase().trim() ||
+              (cleanEmail === 'admin@aaravadvisors.in' && u.role === 'ADMIN') ||
+              (cleanEmail === 'partner@aaravadvisors.in' && u.role === 'PARTNER') ||
+              (cleanEmail === 'article@aaravadvisors.in' && u.role === 'ARTICLE') ||
+              (cleanEmail === 'client@aaravadvisors.in' && u.role === 'CLIENT')
+            );
+            if (matched) {
+              if (Array.isArray(matched.permissions) && matched.permissions.length > 0) {
+                appUser.permissions = matched.permissions;
+              }
+              if (matched.assignedClientId) {
+                appUser.assignedClientId = matched.assignedClientId;
+              }
+              if (matched.mobile) {
+                appUser.mobile = matched.mobile;
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (!appUser.permissions || appUser.permissions.length === 0) {
+        appUser.permissions = getRoleDefaultPermissions(targetRole);
       }
 
       // Step 2: Persist verified session locally for smooth refreshes
@@ -425,6 +459,15 @@ export function Login({ onLogin, timeoutNotification, onDismissTimeoutNotificati
             </div>
             <h2 className="text-2xl lg:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight mb-1">PRACTICE MANAGEMENT SYSTEM</h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Select your designated role to enter the authorized CAOMS workspace.</p>
+          </div>
+
+          {/* Single Company Login Architecture Note */}
+          <div className="mb-5 p-3 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs flex items-start gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 mt-1"></span>
+            <div className="text-zinc-700 dark:text-zinc-300 text-[11px] leading-relaxed">
+              <strong className="text-zinc-900 dark:text-zinc-100 font-bold block mb-0.5">Single Company Master Architecture</strong>
+              Only one master login credentials exist for the practice (<span className="font-mono text-amber-800 dark:text-amber-300 font-semibold">admin@aaravadvisors.in</span>). Access for partners, article staff, and clients is controlled from the internal User Management module using checkbox permissions.
+            </div>
           </div>
 
           {/* SOC2 Inactivity Timeout Flash Banner */}

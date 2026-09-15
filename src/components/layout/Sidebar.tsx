@@ -22,7 +22,8 @@ import {
   ScanText,
   UserCheck,
   ShieldAlert,
-  MapPin
+  MapPin,
+  UserPlus
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Role, User, SessionTimeoutPolicy } from '../../types';
@@ -55,6 +56,7 @@ export function Sidebar({ currentRole, activeTab, setActiveTab, onLogout, user, 
   const { account, openTopUpModal } = useCredits();
   const allNavItems = [
     { id: 'dashboard', label: 'Office Dashboard', icon: LayoutDashboard, roles: ['admin', 'partner', 'article', 'client'] },
+    { id: 'users', label: 'User Management', icon: UserPlus, roles: ['admin'] },
     { id: 'team', label: 'Live Team & Attendance', icon: UserCheck, roles: ['admin', 'partner', 'article'] },
     { id: 'clients', label: 'Client Database', icon: Users, roles: ['admin', 'partner', 'article'] },
     { id: 'tasks', label: 'Tasks & Filings', icon: CheckSquare, roles: ['admin', 'partner', 'article'] },

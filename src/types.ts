@@ -7,6 +7,10 @@ export interface User {
   role: Role;
   tenantId: string;
   firmName: string;
+  permissions?: string[];
+  department?: string;
+  assignedClientId?: string;
+  mobile?: string;
 }
 
 export interface Client {
@@ -126,17 +130,38 @@ export type AuditActionType =
   | 'ACCESS_RESTRICTED'
   | 'ACCESS_RESTORED'
   | 'ACCESS_REVOKED'
-  | 'ACCESS_GRANTED';
+  | 'ACCESS_GRANTED'
+  | 'SECURITY_ALERT';
 
 export type AccessStatus = 'ACTIVE' | 'RESTRICTED';
+
+export type SystemRole = 'ADMIN' | 'PARTNER' | 'MANAGER' | 'ARTICLE' | 'CLIENT';
+
+export type PermissionCategory = 
+  | 'AUDIT_SECURITY' 
+  | 'STATUTORY_FILINGS' 
+  | 'CLIENT_VAULT' 
+  | 'AI_AUTOMATION' 
+  | 'BILLING_OPERATIONS';
+
+export interface PermissionDefinition {
+  id: string;
+  name: string;
+  description: string;
+  category: PermissionCategory;
+}
 
 export interface SystemAccessUser {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'PARTNER' | 'MANAGER' | 'ARTICLE';
+  role: SystemRole;
   mobile: string;
   status: AccessStatus;
+  permissions: string[];
+  passcode?: string;
+  assignedClientId?: string;
+  assignedClientName?: string;
   restrictionReason?: string;
   restrictedAt?: string;
   restrictedBy?: string;
@@ -154,7 +179,7 @@ export interface SessionTimeoutPolicy {
   testingMode?: boolean;
 }
 
-export type AuditCategory = 'AUTH' | 'DATA_ACCESS' | 'PRIVILEGE' | 'VAULT' | 'SYSTEM' | 'BILLING';
+export type AuditCategory = 'AUTH' | 'DATA_ACCESS' | 'PRIVILEGE' | 'VAULT' | 'SYSTEM' | 'BILLING' | 'NETWORK';
 
 export type AuditSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 

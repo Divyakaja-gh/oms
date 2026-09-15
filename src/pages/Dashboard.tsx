@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { User } from '../types';
-import { ShieldAlert, Users, CalendarDays, ArrowUpRight, TrendingUp, UserCheck, Key, MapPin, Globe, Sparkles } from 'lucide-react';
+import { ShieldAlert, Users, CalendarDays, ArrowUpRight, TrendingUp, UserCheck, Key, MapPin, Globe, Sparkles, UserPlus } from 'lucide-react';
 import { ActiveAccessRegistry } from '../components/security/ActiveAccessRegistry';
 import { RecentActivityWidget } from '../components/dashboard/RecentActivityWidget';
 import { TaskSentinelWidget } from '../components/automation/TaskSentinelWidget';
@@ -209,7 +209,25 @@ export function Dashboard({ user, setActiveTab }: Props) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className={`grid grid-cols-1 ${user.role === 'admin' ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
+          {user.role === 'admin' && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className="p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/80 hover:border-indigo-400 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-indigo-950 block">User Management</span>
+                  <span className="text-[11px] text-indigo-700">Assign roles &amp; permissions</span>
+                </div>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-indigo-400 group-hover:text-indigo-700 transition-colors" />
+            </button>
+          )}
+
           <button
             onClick={() => setActiveTab('team')}
             className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 hover:border-indigo-300 text-left transition-all flex items-center justify-between group cursor-pointer"

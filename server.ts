@@ -540,9 +540,13 @@ interface SystemAccessUserRecord {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'PARTNER' | 'MANAGER' | 'ARTICLE';
+  role: 'ADMIN' | 'PARTNER' | 'MANAGER' | 'ARTICLE' | 'CLIENT';
   mobile: string;
   status: 'ACTIVE' | 'RESTRICTED';
+  permissions: string[];
+  passcode?: string;
+  assignedClientId?: string;
+  assignedClientName?: string;
   restrictionReason?: string;
   restrictedAt?: string;
   restrictedBy?: string;
@@ -550,35 +554,100 @@ interface SystemAccessUserRecord {
   lastActive?: string;
 }
 
+const ALL_PERMS = [
+  'audit_logs_view',
+  'audit_soc2_export',
+  'vault_credentials',
+  'filings_approve',
+  'filings_draft',
+  'dsc_management',
+  'clients_view',
+  'clients_manage',
+  'financials_confidential',
+  'vault_documents',
+  'ai_agents_run',
+  'ocr_tool',
+  'billing_manage',
+  'invoices_create',
+  'team_attendance',
+  'user_management'
+];
+
 let accessRegistryStore: SystemAccessUserRecord[] = [
   {
     id: 'usr_admin_01',
-    name: 'Aarav Advisors',
-    email: 'info@aaravadvisors.in',
+    name: 'Aarav Advisors (Practice Master)',
+    email: 'admin@aaravadvisors.in',
     role: 'ADMIN',
     mobile: '+91 98765 43210',
     status: 'ACTIVE',
+    permissions: [...ALL_PERMS],
+    passcode: '9001',
     createdAt: '2026-01-01T00:00:00.000Z',
     lastActive: new Date().toISOString()
   },
   {
     id: 'usr_part_02',
     name: 'Hari Krishna',
-    email: 'harikrishna.p888@gmail.com',
+    email: 'partner@aaravadvisors.in',
     role: 'PARTNER',
     mobile: '8897728402',
     status: 'ACTIVE',
+    permissions: [
+      'audit_logs_view',
+      'audit_soc2_export',
+      'vault_credentials',
+      'filings_approve',
+      'filings_draft',
+      'dsc_management',
+      'clients_view',
+      'clients_manage',
+      'financials_confidential',
+      'vault_documents',
+      'ai_agents_run',
+      'ocr_tool',
+      'billing_manage',
+      'invoices_create',
+      'team_attendance'
+    ],
+    passcode: '8840',
     createdAt: '2026-01-15T00:00:00.000Z',
     lastActive: new Date().toISOString()
   },
   {
     id: 'usr_art_882',
     name: 'T. Varsha',
-    email: 'acc.aaravadvisors@gmail.com',
+    email: 'article@aaravadvisors.in',
     role: 'ARTICLE',
     mobile: '9585997022',
     status: 'ACTIVE',
+    permissions: [
+      'filings_draft',
+      'vault_documents',
+      'clients_view',
+      'ai_agents_run',
+      'ocr_tool',
+      'team_attendance'
+    ],
+    passcode: '9702',
     createdAt: '2026-02-01T00:00:00.000Z',
+    lastActive: new Date().toISOString()
+  },
+  {
+    id: 'usr_cli_101',
+    name: 'Apex Global CFO (Client Apex)',
+    email: 'client@aaravadvisors.in',
+    role: 'CLIENT',
+    mobile: '9811234567',
+    status: 'ACTIVE',
+    permissions: [
+      'vault_documents',
+      'ocr_tool'
+    ],
+    passcode: '3456',
+    assignedClientId: 'cli_apex_01',
+    assignedClientName: 'Apex Global Technologies Ltd',
+    createdAt: '2026-03-10T00:00:00.000Z',
     lastActive: new Date().toISOString()
   }
 ];
@@ -587,23 +656,30 @@ let accessRegistryStore: SystemAccessUserRecord[] = [
 app.post('/api/auth/login', (req, res) => {
   const { role } = req.body;
   // In a real app, validate email/password against DB and generate JWT
+  const cleanUserEmail = (req.body.email || '').toLowerCase().trim();
+  const matchedReg = accessRegistryStore.find(u => 
+    u.email.toLowerCase().trim() === cleanUserEmail ||
+    (cleanUserEmail === 'admin@aaravadvisors.in' && u.role === 'ADMIN') ||
+    (cleanUserEmail === 'partner@aaravadvisors.in' && u.role === 'PARTNER') ||
+    (cleanUserEmail === 'article@aaravadvisors.in' && u.role === 'ARTICLE') ||
+    (cleanUserEmail === 'client@aaravadvisors.in' && u.role === 'CLIENT')
+  );
+
+  const resolvedRole = (matchedReg?.role ? matchedReg.role.toLowerCase() : role) || 'admin';
+
   const user = {
-    id: req.body.uid || `usr_${role}_${Date.now()}`,
-    name: req.body.name || (role === 'admin' ? 'Aarav Advisors' : role === 'partner' ? 'Hari Krishna' : role === 'article' ? 'T. Varsha' : 'Client Apex'),
-    email: req.body.email || (role === 'admin' ? 'admin@aaravadvisors.in' : role === 'partner' ? 'partner@aaravadvisors.in' : role === 'article' ? 'article@aaravadvisors.in' : 'client@aaravadvisors.in'),
-    role: role || 'admin',
+    id: req.body.uid || matchedReg?.id || `usr_${resolvedRole}_${Date.now()}`,
+    name: req.body.name || matchedReg?.name || (resolvedRole === 'admin' ? 'Aarav Advisors' : resolvedRole === 'partner' ? 'Hari Krishna' : resolvedRole === 'article' ? 'T. Varsha' : 'Client Apex'),
+    email: req.body.email || matchedReg?.email || (resolvedRole === 'admin' ? 'admin@aaravadvisors.in' : resolvedRole === 'partner' ? 'partner@aaravadvisors.in' : resolvedRole === 'article' ? 'article@aaravadvisors.in' : 'client@aaravadvisors.in'),
+    role: resolvedRole,
     tenantId: 'firm_abc',
-    firmName: 'Aarav Advisors'
+    firmName: 'Aarav Advisors',
+    permissions: matchedReg ? matchedReg.permissions : (resolvedRole === 'admin' ? [...ALL_PERMS] : ['filings_draft', 'vault_documents', 'ocr_tool']),
+    mobile: matchedReg?.mobile,
+    assignedClientId: matchedReg?.assignedClientId
   };
 
   // SOC2 Check: Verify if user account is restricted in access registry
-  const emailToCheck = (user.email || '').toLowerCase().trim();
-  const matchedReg = accessRegistryStore.find(u => 
-    u.email.toLowerCase().trim() === emailToCheck ||
-    (emailToCheck === 'partner@aaravadvisors.in' && u.email.toLowerCase().includes('harikrishna')) ||
-    (emailToCheck === 'article@aaravadvisors.in' && u.email.toLowerCase().includes('acc.aaravadvisors'))
-  );
-
   if (matchedReg && matchedReg.status === 'RESTRICTED') {
     const failLog = {
       id: `LOG-SOC2-${Math.floor(90145 + Math.random() * 9000)}`,
@@ -1240,7 +1316,7 @@ app.post('/api/access-registry/remove', requireAuth, (req, res) => {
 
 // POST add new user to registry
 app.post('/api/access-registry/add', requireAuth, (req, res) => {
-  const { name, email, role, mobile, actorName, actorEmail } = req.body;
+  const { name, email, role, mobile, permissions, passcode, assignedClientId, assignedClientName, actorName, actorEmail } = req.body;
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and email are required.' });
   }
@@ -1251,7 +1327,17 @@ app.post('/api/access-registry/add', requireAuth, (req, res) => {
     return res.status(400).json({ error: `User with email ${cleanEmail} is already registered.` });
   }
 
-  const validRole = ['ADMIN', 'PARTNER', 'MANAGER', 'ARTICLE'].includes(role) ? role : 'ARTICLE';
+  const validRole = ['ADMIN', 'PARTNER', 'MANAGER', 'ARTICLE', 'CLIENT'].includes(role) ? role : 'ARTICLE';
+  
+  // Sane permissions fallback if not provided
+  let assignedPermissions: string[] = Array.isArray(permissions) ? permissions : [];
+  if (assignedPermissions.length === 0) {
+    if (validRole === 'ADMIN') assignedPermissions = [...ALL_PERMS];
+    else if (validRole === 'PARTNER') assignedPermissions = ALL_PERMS.filter(p => p !== 'user_management');
+    else if (validRole === 'CLIENT') assignedPermissions = ['vault_documents', 'ocr_tool'];
+    else assignedPermissions = ['filings_draft', 'vault_documents', 'clients_view', 'ai_agents_run', 'ocr_tool', 'team_attendance'];
+  }
+
   const newUser: SystemAccessUserRecord = {
     id: `usr_${Date.now().toString(36)}`,
     name: name.trim(),
@@ -1259,6 +1345,10 @@ app.post('/api/access-registry/add', requireAuth, (req, res) => {
     role: validRole,
     mobile: (mobile || '').trim() || 'Not specified',
     status: 'ACTIVE',
+    permissions: assignedPermissions,
+    passcode: passcode || Math.floor(1000 + Math.random() * 9000).toString(),
+    assignedClientId: assignedClientId || undefined,
+    assignedClientName: assignedClientName || undefined,
     createdAt: new Date().toISOString(),
     lastActive: new Date().toISOString()
   };
@@ -1282,10 +1372,11 @@ app.post('/api/access-registry/add', requireAuth, (req, res) => {
     resourceType: 'UserAccount',
     resourceId: newUser.id,
     resourceName: `${newUser.name} (${newUser.email})`,
-    details: `New team member access granted: ${newUser.name} assigned ${newUser.role} role with mobile ${newUser.mobile}.`,
+    details: `New company user provisioned: ${newUser.name} assigned ${newUser.role} role with ${assignedPermissions.length} granular permissions.`,
     metadata: {
       targetEmail: newUser.email,
-      targetRole: newUser.role
+      targetRole: newUser.role,
+      permissionsCount: assignedPermissions.length
     },
     soc2Criterion: 'CC6.1 - User Provisioning & Authorization',
     integrityHash: Math.random().toString(36).substring(2) + 'f0129bc81',
@@ -1294,7 +1385,59 @@ app.post('/api/access-registry/add', requireAuth, (req, res) => {
 
   saveAuditLog(auditLog);
 
-  res.json({ success: true, user: newUser, message: `Access granted for ${newUser.name}.` });
+  res.json({ success: true, user: newUser, message: `Access granted and user provisioned for ${newUser.name}.` });
+});
+
+// POST update granular permissions for a user
+app.post('/api/access-registry/update-permissions', requireAuth, (req, res) => {
+  const { id, permissions, role, actorName, actorEmail } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: 'User ID is required.' });
+  }
+
+  const user = accessRegistryStore.find(u => u.id === id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found in access registry.' });
+  }
+
+  if (Array.isArray(permissions)) {
+    user.permissions = permissions;
+  }
+  if (role && ['ADMIN', 'PARTNER', 'MANAGER', 'ARTICLE', 'CLIENT'].includes(role)) {
+    user.role = role;
+  }
+
+  const auditLog = {
+    id: `LOG-SOC2-${Date.now().toString().slice(-5)}`,
+    timestamp: new Date().toISOString(),
+    actor: {
+      id: 'usr_admin',
+      name: actorName || 'Aarav Advisors',
+      email: actorEmail || 'info@aaravadvisors.in',
+      role: 'admin',
+      ipAddress: getTrustedClientIp(req),
+      userAgent: req.headers['user-agent'] || 'Modern Web Browser'
+    },
+    action: 'PERMISSION_OVERRIDE',
+    category: 'PRIVILEGE',
+    severity: 'MEDIUM',
+    resourceType: 'UserAccount',
+    resourceId: user.id,
+    resourceName: `${user.name} (${user.email})`,
+    details: `Updated granular access permissions for ${user.name} (${user.email}) to [${(user.permissions || []).join(', ')}].`,
+    metadata: {
+      targetEmail: user.email,
+      targetRole: user.role,
+      permissionsCount: user.permissions?.length || 0
+    },
+    soc2Criterion: 'CC6.2 - Privilege Management & Matrix Modification',
+    integrityHash: Math.random().toString(36).substring(2) + 'e8802d21a',
+    status: 'VERIFIED'
+  };
+
+  saveAuditLog(auditLog);
+
+  res.json({ success: true, user, message: `Permissions updated successfully for ${user.name}.` });
 });
 
 // Audit Logs GET Endpoint
